@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>House Preview — Staircase Colours</title>
+<style>
+:root{--bg:#f5f3ee;--panel:#fff;--text:#25231f;--muted:#6f6a62;--border:#d9d4cb;--accent:#315d5a;--accent2:#e8f0ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1080px;margin:auto;padding:16px}.head h1{margin:0 0 4px;font-size:25px}.head p{margin:0 0 16px;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:16px;align-items:start}.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px}.stage{position:relative;overflow:hidden;border-radius:12px;background:#ddd}.stage canvas{display:block;width:100%;height:auto}.controls{display:grid;gap:17px}.group h2{font-size:16px;margin:0 0 8px}.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice{min-height:46px;text-align:left;border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px;display:flex;align-items:center;gap:8px;color:var(--text)}.choice.active{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent2)}.dot{width:22px;height:22px;border-radius:50%;background:var(--c);border:1px solid #0002;flex:0 0 auto}.custom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;min-height:44px;border:1px solid var(--border);border-radius:10px;padding:7px 10px}.custom input{width:50px;height:34px;border:0;background:none}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.action{min-height:44px;border:1px solid var(--border);border-radius:9px;background:#fff;padding:8px 12px}.action.primary{background:var(--accent2)}.status{font-size:13px;color:var(--muted);padding:10px;border-radius:9px;background:#f2f0ea}.legend{display:none;margin-top:8px;font-size:12px;color:var(--muted)}.legend.show{display:block}@media(max-width:780px){main{padding:10px}.layout{grid-template-columns:1fr}.presets{grid-template-columns:1fr 1fr}}@media(max-width:360px){.presets{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main>
+<div class="head"><h1>House Preview</h1><p>Interactive staircase colour preview. The handrail starts as the original dark reddish timber.</p></div>
+<div class="layout">
+<section class="card"><div class="stage"><canvas id="cv" width="360" height="639"></canvas></div><div class="toolbar"><button class="action" id="inspect" type="button">Inspect masks</button><button class="action" id="reset" type="button">Reset</button><button class="action primary" id="save" type="button">Save PNG</button></div><div class="legend" id="legend">Magenta = banister mask · Cyan = handrail mask</div></section>
+<section class="card controls">
+<div class="group"><h2>Banisters</h2><div class="presets" id="banPresets">
+<button class="choice active" data-c="#BD2520" data-n="Atomic Red" type="button"><span class="dot" style="--c:#BD2520"></span>Atomic Red</button>
+<button class="choice" data-c="#7E3B3A" data-n="Geisha 410" type="button"><span class="dot" style="--c:#7E3B3A"></span>Geisha 410</button>
+<button class="choice" data-c="#8B3040" data-n="Warm Ruby" type="button"><span class="dot" style="--c:#8B3040"></span>Warm Ruby</button>
+<button class="choice" data-c="#B18432" data-n="Mustard" type="button"><span class="dot" style="--c:#B18432"></span>Mustard</button>
+<button class="choice" data-c="#515F5F" data-n="Squid Ink" type="button"><span class="dot" style="--c:#515F5F"></span>Squid Ink</button>
+<button class="choice" data-c="#626747" data-n="Olive" type="button"><span class="dot" style="--c:#626747"></span>Olive</button>
+<button class="choice" data-c="#57414E" data-n="Aubergine" type="button"><span class="dot" style="--c:#57414E"></span>Aubergine</button>
+<button class="choice" data-c="#AD813B" data-n="Ochre" type="button"><span class="dot" style="--c:#AD813B"></span>Ochre</button>
+</div><label class="custom">Custom banister <input id="banCustom" type="color" value="#7E3B3A"></label></div>
+<div class="group"><h2>Handrail</h2><div class="presets" id="railPresets">
+<button class="choice active" data-c="original" data-n="Original dark reddish timber" type="button"><span class="dot" style="--c:#5b2b1d"></span>Original timber</button>
+<button class="choice" data-c="#6B2D24" data-n="Mahogany" type="button"><span class="dot" style="--c:#6B2D24"></span>Mahogany</button>
+<button class="choice" data-c="#604331" data-n="Walnut" type="button"><span class="dot" style="--c:#604331"></span>Walnut</button>
+<button class="choice" data-c="#A87543" data-n="Natural oak" type="button"><span class="dot" style="--c:#A87543"></span>Natural oak</button>
+<button class="choice" data-c="#C99A63" data-n="Pale oak" type="button"><span class="dot" style="--c:#C99A63"></span>Pale oak</button>
+<button class="choice" data-c="#292A28" data-n="Charcoal" type="button"><span class="dot" style="--c:#292A28"></span>Charcoal</button>
+</div><label class="custom">Custom handrail <input id="railCustom" type="color" value="#6B2D24"></label></div>
+<div class="status" id="status">Loading staircase…</div>
+</section></div>
+</main>
+<script>
+(()=>{
+const W=360,H=639,cv=document.getElementById('cv'),ctx=cv.getContext('2d',{willReadFrequently:true}),status=document.getElementById('status');
+let original,banMask,railMask,ban='#BD2520',banName='Atomic Red',rail='original',railName='Original dark reddish timber',inspect=false,banMean=1,railMean=1;
+const load=src=>new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=src});
+const imgData=im=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,W,H);return x.getImageData(0,0,W,H)};
+const rgb=h=>{h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]};
+const lum=(r,g,b)=>.2126*r+.7152*g+.0722*b,clamp=v=>Math.max(0,Math.min(255,v));
+function recolour(dst,src,mask,target,mean,opacity=.94){const [tr,tg,tb]=rgb(target);for(let i=0;i<dst.length;i+=4){const a=mask[i]/255;if(a<.01)continue;const L=lum(src[i],src[i+1],src[i+2]),shade=Math.max(.34,Math.min(1.65,Math.pow(Math.max(1,L)/mean,.88))),k=a*opacity,q=1-k;dst[i]=dst[i]*q+clamp(tr*shade)*k;dst[i+1]=dst[i+1]*q+clamp(tg*shade)*k;dst[i+2]=dst[i+2]*q+clamp(tb*shade)*k}}
+function overlay(dst,mask,r,g,b){for(let i=0;i<dst.length;i+=4){const k=(mask[i]/255)*.62;if(k<.02)continue;const q=1-k;dst[i]=dst[i]*q+r*k;dst[i+1]=dst[i+1]*q+g*k;dst[i+2]=dst[i+2]*q+b*k}}
+function render(){if(!original)return;const out=new ImageData(new Uint8ClampedArray(original.data),W,H);if(ban.toUpperCase()!=='#BD2520')recolour(out.data,original.data,banMask,ban,banMean,.95);if(rail!=='original')recolour(out.data,original.data,railMask,rail,railMean,.94);if(inspect){overlay(out.data,banMask,255,0,200);overlay(out.data,railMask,0,229,255)}ctx.putImageData(out,0,0);status.textContent=(inspect?'Mask inspection enabled · ':'')+banName+' banisters · '+railName+' handrail.'}
+function activate(group,btn){group.querySelectorAll('.choice').forEach(x=>x.classList.toggle('active',x===btn))}
+document.getElementById('banPresets').addEventListener('click',e=>{const b=e.target.closest('.choice');if(!b)return;ban=b.dataset.c;banName=b.dataset.n;activate(e.currentTarget,b);render()});
+document.getElementById('railPresets').addEventListener('click',e=>{const b=e.target.closest('.choice');if(!b)return;rail=b.dataset.c;railName=b.dataset.n;activate(e.currentTarget,b);render()});
+document.getElementById('banCustom').addEventListener('input',e=>{ban=e.target.value;banName='Custom '+ban.toUpperCase();document.querySelectorAll('#banPresets .choice').forEach(x=>x.classList.remove('active'));render()});
+document.getElementById('railCustom').addEventListener('input',e=>{rail=e.target.value;railName='Custom '+rail.toUpperCase();document.querySelectorAll('#railPresets .choice').forEach(x=>x.classList.remove('active'));render()});
+document.getElementById('inspect').addEventListener('click',e=>{inspect=!inspect;e.currentTarget.textContent=inspect?'Hide masks':'Inspect masks';document.getElementById('legend').classList.toggle('show',inspect);render()});
+document.getElementById('reset').addEventListener('click',()=>{ban='#BD2520';banName='Atomic Red';rail='original';railName='Original dark reddish timber';inspect=false;document.getElementById('inspect').textContent='Inspect masks';document.getElementById('legend').classList.remove('show');activate(document.getElementById('banPresets'),document.querySelector('#banPresets [data-c="#BD2520"]'));activate(document.getElementById('railPresets'),document.querySelector('#railPresets [data-c="original"]'));render()});
+document.getElementById('save').addEventListener('click',()=>{const a=document.createElement('a');a.download='staircase-colour-preview.png';a.href=cv.toDataURL('image/png');a.click()});
+Promise.all([load('assets/staircase.jpg'),load('assets/banister-mask.png'),load('assets/handrail-mask.png')]).then(([base,bm,rm])=>{original=imgData(base);const b=imgData(bm).data,r=imgData(rm).data;banMask=new Uint8ClampedArray(b.length);railMask=new Uint8ClampedArray(r.length);let bs=0,bc=0,rs=0,rc=0;for(let i=0;i<b.length;i+=4){banMask[i]=b[i];railMask[i]=r[i];if(b[i]>50){bs+=lum(original.data[i],original.data[i+1],original.data[i+2]);bc++}if(r[i]>50){rs+=lum(original.data[i],original.data[i+1],original.data[i+2]);rc++}}banMean=bs/Math.max(1,bc);railMean=rs/Math.max(1,rc);render()}).catch(()=>{status.textContent='The staircase image or masks could not be loaded.'});
+})();
+</script>
+</body></html>
