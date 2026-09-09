@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy and test GitHub Pages
 
 on:
   push:
@@ -33,3 +33,21 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Smoke-test live app
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          URL="${PAGE_URL}?sha=${GITHUB_SHA}"
+          for attempt in 1 2 3 4 5 6; do
+            DOM=$(google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=12000 --dump-dom "$URL" 2>/dev/null || true)
+            if grep -q 'data-selftest="passed"' <<<"$DOM"; then
+              echo "Live interaction self-test passed: $URL"
+              exit 0
+            fi
+            echo "Attempt $attempt: live self-test not ready yet"
+            sleep 5
+          done
+          echo "Live app failed interaction self-test"
+          exit 1
