@@ -42,7 +42,7 @@ jobs:
           URL="${PAGE_URL}?sha=${GITHUB_SHA}"
           echo "Testing $URL"
           HTML=$(curl -fsSL "${PAGE_URL}index.html?sha=${GITHUB_SHA}")
-          grep -q "20260909e" <<<"$HTML"
+          grep -q "20260909f" <<<"$HTML"
           BROWSER="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$BROWSER"
           for attempt in 1 2 3 4 5 6; do
@@ -50,8 +50,8 @@ jobs:
             SELF=$(grep -o 'data-selftest="[^"]*"' <<<"$DOM" | head -1 || true)
             DETAIL=$(grep -o 'data-selftest-detail="[^"]*"' <<<"$DOM" | head -1 || true)
             SOURCE=$(grep -o 'data-source-size="[^"]*"' <<<"$DOM" | head -1 || true)
-            MASKS=$(grep -o 'data-mask-pixels="[^"]*"' <<<"$DOM" | head -1 || true)
-            echo "Attempt $attempt: $SELF $DETAIL $SOURCE $MASKS"
+            MASK=$(grep -o 'data-mask-support="[^"]*"' <<<"$DOM" | head -1 || true)
+            echo "Attempt $attempt: $SELF $DETAIL $SOURCE $MASK"
             if grep -q 'data-selftest="passed"' <<<"$DOM"; then
               echo "Live interaction self-test passed: $URL"
               exit 0
