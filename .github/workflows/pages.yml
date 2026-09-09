@@ -40,13 +40,27 @@ jobs:
         run: |
           set -euo pipefail
           URL="${PAGE_URL}?sha=${GITHUB_SHA}"
+          echo "Testing $URL"
+          curl -fsSL "${PAGE_URL}index.html?sha=${GITHUB_SHA}" | grep -q "20260909d"
+          BROWSER="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$BROWSER" ]; then
+            echo "No Chromium-family browser found on runner"
+            exit 1
+          fi
+          echo "Using browser: $BROWSER"
           for attempt in 1 2 3 4 5 6; do
-            DOM=$(google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=12000 --dump-dom "$URL" 2>/dev/null || true)
+            set +e
+            DOM="$($BROWSER --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 --dump-dom "$URL" 2>browser.err)"
+            CODE=$?
+            set -e
+            echo "Attempt $attempt browser exit: $CODE"
+            grep -o 'data-selftest="[^"]*"' <<<"$DOM" | head -1 || true
+            grep -o 'class="status"[^>]*>[^<]*' <<<"$DOM" | head -1 || true
             if grep -q 'data-selftest="passed"' <<<"$DOM"; then
               echo "Live interaction self-test passed: $URL"
               exit 0
             fi
-            echo "Attempt $attempt: live self-test not ready yet"
+            cat browser.err || true
             sleep 5
           done
           echo "Live app failed interaction self-test"
