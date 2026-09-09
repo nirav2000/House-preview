@@ -42,26 +42,20 @@ jobs:
           URL="${PAGE_URL}?sha=${GITHUB_SHA}"
           echo "Testing $URL"
           HTML=$(curl -fsSL "${PAGE_URL}index.html?sha=${GITHUB_SHA}")
-          grep -q "20260909d" <<<"$HTML"
+          grep -q "20260909e" <<<"$HTML"
           BROWSER="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [ -z "$BROWSER" ]; then
-            echo "No Chromium-family browser found on runner"
-            exit 1
-          fi
-          echo "Using browser: $BROWSER"
+          test -n "$BROWSER"
           for attempt in 1 2 3 4 5 6; do
-            set +e
-            DOM="$($BROWSER --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 --dump-dom "$URL" 2>browser.err)"
-            CODE=$?
-            set -e
-            echo "Attempt $attempt browser exit: $CODE"
-            grep -o 'data-selftest="[^"]*"' <<<"$DOM" | head -1 || true
-            grep -o 'class="status"[^>]*>[^<]*' <<<"$DOM" | head -1 || true
+            DOM="$($BROWSER --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 --dump-dom "$URL" 2>/dev/null || true)"
+            SELF=$(grep -o 'data-selftest="[^"]*"' <<<"$DOM" | head -1 || true)
+            DETAIL=$(grep -o 'data-selftest-detail="[^"]*"' <<<"$DOM" | head -1 || true)
+            SOURCE=$(grep -o 'data-source-size="[^"]*"' <<<"$DOM" | head -1 || true)
+            MASKS=$(grep -o 'data-mask-pixels="[^"]*"' <<<"$DOM" | head -1 || true)
+            echo "Attempt $attempt: $SELF $DETAIL $SOURCE $MASKS"
             if grep -q 'data-selftest="passed"' <<<"$DOM"; then
               echo "Live interaction self-test passed: $URL"
               exit 0
             fi
-            cat browser.err || true
             sleep 5
           done
           echo "Live app failed interaction self-test"
